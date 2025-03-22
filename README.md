@@ -1,6 +1,6 @@
 ## How to Run ?
 
-i) pip install requirements.txt 
+i) pip install -r requirements.txt 
 
 
 ii) python run.py
