@@ -52,13 +52,13 @@ test_params = {
     'query_results_dir': 'main',
 
     # LLM setting
-    'model_name': 'palm2', 
+    'model_name': 'llama7b', 
     'use_truth': False,
     'top_k': 5,
     'gpu_id': 0,
 
     # attack
-    'attack_method': 'LM_targeted',
+    'attack_method': 'hotflip',
     'adv_per_query': 5,
     'score_function': 'dot',
     'repeat_times': 10,

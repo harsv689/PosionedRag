@@ -84,6 +84,7 @@ class Attacker():
         For each query, if adv_per_query>1, we use different generated adv_texts or copies of the same adv_text
         '''
         adv_text_groups = [] # get the adv_text for the iter
+        print(f"Attack method selected: {self.attack_method}")
         if self.attack_method == "LM_targeted":
             for i in range(len(target_queries)):
                 question = target_queries[i]['query']
