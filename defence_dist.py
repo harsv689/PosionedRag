@@ -30,6 +30,7 @@ retrieval_model.eval().cuda()
 # Load or Compute Corpus Embeddings
 embeddings_path = "corpus_embeddings.pkl"
 if os.path.exists(embeddings_path):
+    print("Loading from saved embeddings")
     with open(embeddings_path, 'rb') as f:
         corpus_embeddings = pickle.load(f)
 else:
@@ -45,14 +46,20 @@ else:
         pickle.dump(corpus_embeddings, f)
 
 # Process first 20 samples for visualization
-print("Embedding corpus done")
-num_samples = 20
+num_samples = 100
 K = 10
-similarity_results = []
 
-sample_keys = list(adversarial_data.keys())[:num_samples]
+corpus_corpus_sims = []
+corpus_adv_sims = []
+adv_adv_sims = []
 
+sample_keys = list(adversarial_data.keys()) #[:num_samples]
+print(len(sample_keys))
+count = 0
 for key in sample_keys:
+    count +=1
+    if count % 10 == 0:
+        print(f"{count} samples evaluated")
     data = adversarial_data[key]
     question = data["question"]
     adversarial_texts = data["adv_texts"]
@@ -81,29 +88,25 @@ for key in sample_keys:
 
     similarity_matrix = st_util.cos_sim(top_k_matrix, top_k_matrix).cpu().numpy()
 
-    similarity_results.append((similarity_matrix, top_k_indices))
-
-# Visualization distinguishing corpus-corpus, adversarial-adversarial, corpus-adversarial
-fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(25, 20))
-axes = axes.flatten()
-
-for idx, (sim_matrix, top_k_indices) in enumerate(similarity_results):
-    sns.heatmap(sim_matrix, annot=True, cmap="coolwarm", ax=axes[idx], cbar=True,
-                linewidths=0.5, linecolor='black', square=True)
-
+    # Categorize similarities
     for i in range(K):
-        for j in range(K):
+        for j in range(i + 1, K):
             if top_k_indices[i] < len(corpus_embeddings) and top_k_indices[j] < len(corpus_embeddings):
-                edgecolor = 'green'  # corpus-corpus
+                corpus_corpus_sims.append(similarity_matrix[i, j])
             elif top_k_indices[i] >= len(corpus_embeddings) and top_k_indices[j] >= len(corpus_embeddings):
-                edgecolor = 'blue'   # adversarial-adversarial
+                adv_adv_sims.append(similarity_matrix[i, j])
             else:
-                edgecolor = 'yellow' # corpus-adversarial
-            axes[idx].add_patch(plt.Rectangle((j, i), 1, 1, fill=False, edgecolor=edgecolor, lw=2))
+                corpus_adv_sims.append(similarity_matrix[i, j])
 
-    axes[idx].set_title(f"Sample {idx+1}")
-    axes[idx].set_xlabel("Retrieved Top-K Documents")
-    axes[idx].set_ylabel("Retrieved Top-K Documents")
+# Plot similarity distributions
+plt.figure(figsize=(12, 8))
+sns.histplot(corpus_corpus_sims, color="green", label="Corpus-Corpus", kde=True, stat="density", linewidth=0)
+sns.histplot(corpus_adv_sims, color="yellow", label="Corpus-Adversarial", kde=True, stat="density", linewidth=0)
+sns.histplot(adv_adv_sims, color="blue", label="Adversarial-Adversarial", kde=True, stat="density", linewidth=0)
 
+plt.title("Distribution of Similarities")
+plt.xlabel("Cosine Similarity")
+plt.ylabel("Density")
+plt.legend()
 plt.tight_layout()
-plt.savefig("similarity_graph.png", dpi=100, bbox_inches="tight")
+plt.savefig("dist_sim.png", dpi=100, bbox_inches="tight")

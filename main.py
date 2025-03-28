@@ -10,7 +10,12 @@ from src.utils import save_results, load_json, setup_seeds, clean_str, f1_score
 from src.attack import Attacker
 from src.prompts import wrap_prompt
 import torch
-
+import pdb
+import os
+os.environ['TRANSFORMERS_CACHE'] = '/scratch0/sghosal2/.cache/'
+os.environ['HF_HOME'] = '/scratch0/sghosal2/.cache/huggingface/'
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def parse_args():
@@ -45,6 +50,7 @@ def parse_args():
 
 
 def main():
+    print("I am here")
     args = parse_args()
     torch.cuda.set_device(args.gpu_id)
     device = 'cuda'
@@ -55,12 +61,14 @@ def main():
     # load target queries and answers
     if args.eval_dataset == 'msmarco':
         args.split = 'train'
-
+    # pdb.set_trace()
     corpus, queries, qrels = load_beir_datasets(args.eval_dataset, args.split)
     incorrect_answers = load_json(f'results/adv_targeted_results/{args.eval_dataset}.json')
     incorrect_answers = list(incorrect_answers.values())
 
     # load BEIR top_k results  
+    
+   
     if args.orig_beir_results is None: 
         print(f"Please evaluate on BEIR first -- {args.eval_model_code} on {args.eval_dataset}")
         # Try to get beir eval results from ./beir_results
@@ -71,6 +79,8 @@ def main():
             args.orig_beir_results = f"results/beir_results/{args.eval_dataset}-{args.eval_model_code}-dev.json"
         if args.score_function == 'cos_sim':
             args.orig_beir_results = f"results/beir_results/{args.eval_dataset}-{args.eval_model_code}-cos.json"
+        # pdb.set_trace()
+        print(args.orig_beir_results)
         assert os.path.exists(args.orig_beir_results), f"Failed to get beir_results from {args.orig_beir_results}!"
         print(f"Automatically get beir_resutls from {args.orig_beir_results}.")
     with open(args.orig_beir_results, 'r') as f:
